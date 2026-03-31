@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const API_URL = "https://aliocalendar.vercel.app/api/jobs";
+const API_URL = "https://aliocalendar.vercel.app/";
 
 const DEMO = [
   {id:1,company:"(데모) 한국가스공사",title:"2026 상반기 청년인턴 채용",type:"청년인턴",subType:"체험형",category:"기계",location:"대전",address:"대전",startDate:"2026-03-20",endDate:"2026-04-10",people:5,url:"https://job.alio.go.kr",ongoing:true},
