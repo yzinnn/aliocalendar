@@ -10,7 +10,6 @@ const DEMO = [
 ];
 
 const DAYS_KR = ["일","월","화","수","목","금","토"];
-const MO = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 
 function getDIM(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function getFD(y, m) { return new Date(y, m, 1).getDay(); }
@@ -50,7 +49,6 @@ export default function App() {
   const [lu, setLu] = useState(null);
   const [pn, setPn] = useState(false);
   const [applied, setApplied] = useState(loadApplied);
-  const [tab, setTab] = useState("calendar");
   const ref = useRef();
 
   const toggleApplied = (id) => {
@@ -62,10 +60,11 @@ export default function App() {
     });
   };
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isForce = false) => {
     setLd(true); setApiError(null);
     try {
-      const r = await fetch(API_URL);
+      const fetchUrl = isForce ? `${API_URL}?force=true` : API_URL;
+      const r = await fetch(fetchUrl);
       if (!r.ok) throw new Error(`서버 응답 오류 (HTTP ${r.status})`);
       const j = await r.json();
       if (!j.success) throw new Error(`API 내부 오류: ${j.error || "알 수 없는 에러"}`);
@@ -91,7 +90,6 @@ export default function App() {
   const fj = jobs.filter(j => (lf === "전체" || j.location === lf) && (tf === "전체" || j.type === tf || (tf === "계약직" && j.type === "무기계약직")));
   const jfd = (ds) => fj.filter(j => j.startDate && j.endDate && inR(ds, j.startDate, j.endDate));
   
-  // 달력 주(Week) 단위로 쪼개기
   const DIM = getDIM(yr, mo);
   const FD = getFD(yr, mo);
   const rawCells = Array(FD).fill(null).concat(Array.from({length: DIM}, (_, i) => i + 1));
@@ -105,13 +103,11 @@ export default function App() {
   const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   const act = fj.filter(j => !calcDD(j.endDate).x);
 
-  // 선택된 주차 인덱스 찾기
   let selectedWeekIdx = -1;
   if (pn && sel) {
     selectedWeekIdx = weeks.findIndex(week => week.includes(sel.day));
   }
 
-  // 화면에 그릴 주 (선택되었으면 해당 주만, 아니면 전체)
   const visibleWeeks = selectedWeekIdx !== -1 ? [weeks[selectedWeekIdx]] : weeks;
 
   const click = (day) => {
@@ -177,7 +173,6 @@ export default function App() {
     body { background-color: #f8fafc; color: #0f172a; }
     .app-container { min-height: 100vh; display: flex; flex-direction: column; }
     
-    /* 상단 헤더 (캡처본 스타일 유지 및 업데이트 시간 우측 상단 배치) */
     .header { background: #ffffff; padding: 20px 40px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid #e2e8f0; }
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
     .title-area h1 { font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin-top: 4px; }
@@ -187,14 +182,12 @@ export default function App() {
     .update-btn { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s; }
     .update-btn:hover { background: #e2e8f0; color: #0f172a; }
 
-    /* 통계 필 알약 */
     .stats-group { display: flex; gap: 8px; margin-bottom: 4px; }
     .stat-pill { padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; display: flex; gap: 4px; align-items: center; }
     .stat-blue { background: #eff6ff; color: #2563eb; }
     .stat-green { background: #ecfdf5; color: #059669; }
     .stat-purple { background: #f5f3ff; color: #7c3aed; }
 
-    /* 필터 버튼 영역 */
     .filter-row { display: flex; gap: 16px; flex-wrap: wrap; }
     .filter-group { display: flex; gap: 6px; }
     .filter-btn { padding: 6px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
@@ -203,11 +196,6 @@ export default function App() {
     
     .error-banner { background: #fef2f2; border-bottom: 1px solid #fca5a5; color: #b91c1c; padding: 12px 40px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
 
-    .mobile-tabs { display: none; background: #fff; border-bottom: 1px solid #e2e8f0; }
-    .tab { flex: 1; text-align: center; padding: 14px 0; font-size: 15px; font-weight: 600; color: #64748b; border-bottom: 2px solid transparent; cursor: pointer; }
-    .tab.active { color: #0f172a; border-bottom-color: #0f172a; }
-
-    /* 메인 그리드 및 달력 확장 */
     .main-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(360px, 1fr); gap: 32px; padding: 32px 40px; max-width: 1800px; margin: 0 auto; width: 100%; align-items: start; }
     
     .calendar-section { background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); padding: 32px; width: 100%; transition: all 0.3s ease; }
@@ -225,7 +213,6 @@ export default function App() {
     .cal-day-header.sat { color: #3b82f6; }
     
     .cal-week-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 12px; }
-    /* 글씨 및 셀 크기 시원하게 확대 */
     .cal-cell { min-height: 120px; border-radius: 12px; padding: 12px; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px; background: #fff; }
     .cal-cell:hover { background: #f8fafc; border-color: #e2e8f0; }
     .cal-cell.today { background: #eff6ff; }
@@ -234,7 +221,6 @@ export default function App() {
     .date-num.sun { color: #ef4444; }
     .date-num.sat { color: #3b82f6; }
     
-    /* 선택된 날짜 패널 (달력 안쪽에 표시됨) */
     .detail-panel { margin-top: 16px; border-top: 2px dashed #e2e8f0; padding-top: 24px; animation: slideDown 0.3s ease-out forwards; }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -305,7 +291,7 @@ export default function App() {
         ) : (
           <>
             <span>{demo ? "DEMO 모드" : (lu ? `오후 ${new Date(lu).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit", hour12: false}).replace(/^1[2-9]|2[0-3]/, (m) => m-12)} 갱신` : "")}</span>
-            <button className="update-btn" onClick={load}>↻</button>
+            <button className="update-btn" onClick={() => load(true)}>↻</button>
           </>
         )}
       </div>
@@ -342,7 +328,6 @@ export default function App() {
       </div>
 
       <div>
-        {/* 선택된 주(Week)만 렌더링하거나, 전체 달력 렌더링 */}
         {visibleWeeks.map((week, wIdx) => (
           <div key={wIdx} className="cal-week-row">
             {week.map((day, dIdx) => {
@@ -358,7 +343,6 @@ export default function App() {
                 <div key={day} className={`cal-cell ${isT?'today':''} ${isS?'selected':''}`} onClick={() => click(day)}>
                   <span className={`date-num ${dow===0?'sun':dow===6?'sat':''}`}>{day}</span>
                   
-                  {/* 점 표기 로직 (최대 3개 + N) */}
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "auto", flexWrap: "wrap" }}>
                     {dj.slice(0, 3).map((job, k) => (
                       <div key={k} style={{ width: "8px", height: "8px", borderRadius: "50%", background: getTypeColor(job.type) }} />
@@ -374,7 +358,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* 날짜 선택 시 해당 주차 바로 아래에 나타나는 패널 */}
       {pn && sel && (
         <div className="detail-panel">
           <div className="detail-header">
@@ -387,7 +370,7 @@ export default function App() {
             {sel.jobs.length === 0 ? (
               <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontWeight: 600 }}>해당 날짜에 마감되는 공고가 없습니다.</div>
             ) : (
-              sel.jobs.map(job => <JobCard key={job.id} job={job} showCheck={true} />)
+              sel.jobs.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
             )}
           </div>
         </div>
@@ -403,7 +386,7 @@ export default function App() {
         {act.length === 0 ? (
           <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontWeight: 600 }}>진행중인 공고가 없습니다.</div>
         ) : (
-          act.sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
+          act.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
         )}
       </div>
     </section>
