@@ -42,7 +42,7 @@ export default function App() {
   const [sel, setSel] = useState(null);
   const [lf, setLf] = useState("전체");
   const [tf, setTf] = useState("전체");
-  const [showFav, setShowFav] = useState(false); // 관심공고만 보기 필터
+  const [showFav, setShowFav] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [ld, setLd] = useState(true);
   const [demo, setDemo] = useState(false);
@@ -50,7 +50,6 @@ export default function App() {
   const [lu, setLu] = useState(null);
   const [pn, setPn] = useState(false);
   
-  // 지원여부 및 관심공고(즐겨찾기) 상태
   const [applied, setApplied] = useState(() => loadLocal("applied"));
   const [favorites, setFavorites] = useState(() => loadLocal("favorites"));
   const ref = useRef();
@@ -100,13 +99,6 @@ export default function App() {
     return () => clearInterval(ref.current);
   }, [load]);
 
-  useEffect(() => {
-    const handleEsc = (e) => { if (e.key === 'Escape') setPn(false); };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, []);
-
-  // 필터 로직 (관심공고 필터 추가)
   const fj = jobs.filter(j => 
     (lf === "전체" || j.location === lf) && 
     (tf === "전체" || j.type === tf || (tf === "계약직" && j.type === "무기계약직")) &&
@@ -127,6 +119,13 @@ export default function App() {
 
   const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   const act = fj.filter(j => !calcDD(j.endDate).x);
+
+  // 선택된 날짜가 있으면 해당 날짜가 속한 주(Week)만 렌더링
+  let selectedWeekIdx = -1;
+  if (pn && sel) {
+    selectedWeekIdx = weeks.findIndex(week => week.includes(sel.day));
+  }
+  const visibleWeeks = selectedWeekIdx !== -1 ? [weeks[selectedWeekIdx]] : weeks;
 
   const click = (day) => {
     if (!day) return;
@@ -226,7 +225,7 @@ export default function App() {
 
     .main-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1.2fr); gap: 24px; padding: 24px 5%; max-width: 1400px; margin: 0 auto; width: 100%; align-items: start; }
     
-    .calendar-section { background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.02); padding: 20px; width: 100%; }
+    .calendar-section { background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.02); padding: 20px; width: 100%; transition: all 0.3s ease; }
     .cal-header { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; position: relative; }
     .cal-nav-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; position: absolute; color: #64748b; transition: all 0.2s; }
     .cal-nav-btn:hover { background: #f1f5f9; color: #0f172a; }
@@ -249,14 +248,16 @@ export default function App() {
     .date-num.sun { color: #ef4444; }
     .date-num.sat { color: #3b82f6; }
 
-    /* 대형 팝업(모달) 스타일 추가 */
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(3px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s ease-out; }
-    .modal-content { background: #fff; border-radius: 16px; width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: slideUp 0.3s ease-out; }
-    .modal-header { padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 16px 16px 0 0; }
-    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    /* 모달 팝업 대신 자연스럽게 아래로 이어지는 상세 목록 컨테이너 */
+    .detail-list-container { margin-top: 24px; padding-top: 24px; border-top: 2px dashed #e2e8f0; animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    .detail-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .detail-title { font-size: 18px; font-weight: 800; color: #0f172a; }
+    .detail-title span { color: #2563eb; font-size: 16px; margin-left: 6px; }
+    .view-month-btn { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .view-month-btn:hover { background: #e2e8f0; color: #0f172a; }
 
+    /* 우측 전체 리스트 패널 */
     .list-section { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 120px); }
     .list-header { font-size: 14px; font-weight: 800; color: #0f172a; display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
     .scroll-area { overflow-y: auto; padding-right: 8px; padding-bottom: 20px; }
@@ -300,7 +301,6 @@ export default function App() {
     @media (max-width: 1024px) {
       .main-grid { grid-template-columns: 1fr; gap: 20px; padding: 16px 5%; }
       .list-section { position: relative; top: 0; height: auto; }
-      .modal-content { max-height: 90vh; }
     }
   `}</style>
 
@@ -345,7 +345,6 @@ export default function App() {
         </div>
         <div style={{ width: 1, background: "#e2e8f0" }}/>
         
-        {/* 관심공고 필터 토글 버튼 추가 */}
         <div className="filter-group">
           <button className={`filter-btn ${!showFav ? "active" : ""}`} onClick={() => setShowFav(false)}>전체보기</button>
           <button className={`filter-btn ${showFav ? "active" : ""}`} onClick={() => setShowFav(true)} style={{ color: showFav ? "#fff" : "#fbbf24", borderColor: showFav ? "#2563eb" : "#fde68a", background: showFav ? "#2563eb" : "#fffbeb" }}>⭐ 관심공고</button>
@@ -367,7 +366,7 @@ export default function App() {
       </div>
 
       <div>
-        {weeks.map((week, wIdx) => (
+        {visibleWeeks.map((week, wIdx) => (
           <div key={wIdx} className="cal-week-row">
             {week.map((day, dIdx) => {
               if (!day) return <div key={`e${wIdx}-${dIdx}`} className="cal-cell" style={{ background: "transparent", border: "none", cursor: "default" }} />;
@@ -397,23 +396,21 @@ export default function App() {
         ))}
       </div>
 
-      {/* 날짜 클릭 시 나타나는 대형 팝업(모달) 창 */}
+      {/* 공간을 제한하지 않고 자연스럽게 밑으로 이어지는 상세 목록 */}
       {pn && sel && (
-        <div className="modal-overlay" onClick={() => setPn(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: 0 }}>
-                {mo+1}월 {sel.day}일 마감 공고 <span style={{ color: "#2563eb", fontSize: 16, marginLeft: 6 }}>{sel.jobs.length}건</span>
-              </h3>
-              <button onClick={() => setPn(false)} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#64748b" }}>✕</button>
-            </div>
-            <div className="modal-body scroll-area">
-              {sel.jobs.length === 0 ? (
-                <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 14, fontWeight: 600 }}>마감되는 공고가 없습니다.</div>
-              ) : (
-                sel.jobs.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
-              )}
-            </div>
+        <div className="detail-list-container">
+          <div className="detail-list-header">
+            <h3 className="detail-title">
+              {mo+1}월 {sel.day}일 마감 공고 <span>{sel.jobs.length}건</span>
+            </h3>
+            <button className="view-month-btn" onClick={() => setPn(false)}>전체 달력 보기</button>
+          </div>
+          <div>
+            {sel.jobs.length === 0 ? (
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>해당 날짜에 마감되는 공고가 없습니다.</div>
+            ) : (
+              sel.jobs.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
+            )}
           </div>
         </div>
       )}
