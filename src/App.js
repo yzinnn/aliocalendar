@@ -3,10 +3,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 const API_URL = "/api/jobs";
 
 const DEMO = [
-  {id:1,company:"(데모) 한국가스공사",title:"2026 상반기 청년인턴 채용",type:"청년인턴",subType:"체험형",category:"기계",location:"대전",address:"대전",startDate:"2026-03-20",endDate:"2026-04-10",people:5,url:"https://job.alio.go.kr",ongoing:true},
-  {id:2,company:"(데모) 한국도로공사",title:"기간제근로자(도로관리원) 채용공고",type:"계약직",subType:"",category:"기계",location:"창원",address:"창원",startDate:"2026-03-24",endDate:"2026-03-31",people:1,url:"https://job.alio.go.kr",ongoing:true},
-  {id:3,company:"(데모) 한국항공우주산업",title:"청년인턴 설계",type:"청년인턴",subType:"채용형",category:"기계",location:"창원",address:"경남",startDate:"2026-03-28",endDate:"2026-04-18",people:8,url:"https://job.alio.go.kr",ongoing:true},
-  {id:4,company:"(데모) 두산에너빌리티",title:"신입 채용",type:"정규직",subType:"",category:"기계",location:"창원",address:"경남",startDate:"2026-04-01",endDate:"2026-04-20",people:6,url:"https://job.alio.go.kr",ongoing:true},
+  {id:1,company:"(데모) 한국가스공사",title:"2026 상반기 기계설비 청년인턴 채용",type:"청년인턴",subType:"체험형",isMachine:true,category:"기계",location:"대전",address:"대전",startDate:"2026-03-20",endDate:"2026-04-10",people:5,url:"https://job.alio.go.kr",ongoing:true},
+  {id:2,company:"(데모) 한국도로공사",title:"기간제근로자(도로관리원) 채용공고",type:"계약직",subType:"",isMachine:false,category:"기타",location:"창원",address:"창원",startDate:"2026-03-24",endDate:"2026-03-31",people:1,url:"https://job.alio.go.kr",ongoing:true},
+  {id:3,company:"(데모) 한국항공우주산업",title:"청년인턴 설계(기계)",type:"청년인턴",subType:"채용형",isMachine:true,category:"기계",location:"창원",address:"경남",startDate:"2026-03-28",endDate:"2026-04-18",people:8,url:"https://job.alio.go.kr",ongoing:true},
+  {id:4,company:"(데모) 두산에너빌리티",title:"일반행정 신입 채용",type:"정규직",subType:"",isMachine:false,category:"행정",location:"창원",address:"경남",startDate:"2026-04-01",endDate:"2026-04-20",people:6,url:"https://job.alio.go.kr",ongoing:true},
 ];
 
 const DAYS_KR = ["일","월","화","수","목","금","토"];
@@ -40,9 +40,14 @@ export default function App() {
   const [yr, setYr] = useState(now.getFullYear());
   const [mo, setMo] = useState(now.getMonth());
   const [sel, setSel] = useState(null);
+  
+  // 탭 및 필터 상태
+  const [viewTab, setViewTab] = useState("all"); 
   const [lf, setLf] = useState("전체");
   const [tf, setTf] = useState("전체");
+  const [mf, setMf] = useState("전체"); 
   const [showFav, setShowFav] = useState(false);
+  
   const [jobs, setJobs] = useState([]);
   const [ld, setLd] = useState(true);
   const [demo, setDemo] = useState(false);
@@ -99,9 +104,12 @@ export default function App() {
     return () => clearInterval(ref.current);
   }, [load]);
 
+  // 필터 로직: 탭, 지역, 형태, 기술직, 관심공고 반영
   const fj = jobs.filter(j => 
+    (viewTab === "all" || (viewTab === "applied" && applied[j.id])) &&
     (lf === "전체" || j.location === lf) && 
     (tf === "전체" || j.type === tf || (tf === "계약직" && j.type === "무기계약직")) &&
+    (mf === "전체" || (mf === "기술직" && j.isMachine)) &&
     (!showFav || favorites[j.id])
   );
 
@@ -120,7 +128,6 @@ export default function App() {
   const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   const act = fj.filter(j => !calcDD(j.endDate).x);
 
-  // 선택된 날짜가 있으면 해당 날짜가 속한 주(Week)만 렌더링
   let selectedWeekIdx = -1;
   if (pn && sel) {
     selectedWeekIdx = weeks.findIndex(week => week.includes(sel.day));
@@ -174,8 +181,9 @@ export default function App() {
         <div className="tag-group">
           <span className="tag" style={{ background: `${getTypeColor(job.type)}15`, color: getTypeColor(job.type) }}>{job.type}</span>
           {job.subType && <span className="tag" style={{ background: "#f1f5f9", color: "#475569" }}>{job.subType}</span>}
+          {job.isMachine && <span className="tag" style={{ background: "#fffbeb", color: "#b45309" }}>기술직</span>}
           <span className="tag tag-location">{job.location}</span>
-          {job.people > 0 && <span className="people-count">{job.people}명</span>}
+          {job.people > 0 && <span className="people-count">{job.people}명 채용</span>}
         </div>
         
         <div className="card-footer">
@@ -208,6 +216,11 @@ export default function App() {
     .update-info { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; font-weight: 500; }
     .update-btn { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 12px; transition: all 0.2s; }
     .update-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+    /* 추가된 탭 UI */
+    .view-tabs { display: flex; gap: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px; margin-bottom: 4px; }
+    .view-tab { padding: 4px 4px; font-size: 15px; font-weight: 800; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .view-tab.active { color: #111827; border-bottom-color: #111827; }
 
     .stats-group { display: flex; gap: 6px; margin-bottom: 6px; }
     .stat-pill { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: flex; gap: 4px; align-items: center; }
@@ -248,7 +261,6 @@ export default function App() {
     .date-num.sun { color: #ef4444; }
     .date-num.sat { color: #3b82f6; }
 
-    /* 모달 팝업 대신 자연스럽게 아래로 이어지는 상세 목록 컨테이너 */
     .detail-list-container { margin-top: 24px; padding-top: 24px; border-top: 2px dashed #e2e8f0; animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     .detail-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
@@ -257,7 +269,6 @@ export default function App() {
     .view-month-btn { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .view-month-btn:hover { background: #e2e8f0; color: #0f172a; }
 
-    /* 우측 전체 리스트 패널 */
     .list-section { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 120px); }
     .list-header { font-size: 14px; font-weight: 800; color: #0f172a; display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
     .scroll-area { overflow-y: auto; padding-right: 8px; padding-bottom: 20px; }
@@ -286,7 +297,7 @@ export default function App() {
     .tag-group { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; align-items: center; padding-left: 20px; }
     .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
     .tag-location { background: #fffbeb; color: #b45309; }
-    .people-count { font-size: 11.5px; color: #94a3b8; font-weight: 600; margin-left: 2px; }
+    .people-count { font-size: 11.5px; color: #64748b; font-weight: 700; margin-left: 2px; }
 
     .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 10px; padding-left: 20px; }
     .date-range { font-size: 11px; color: #64748b; font-family: monospace; letter-spacing: -0.3px; font-weight: 500; }
@@ -329,6 +340,11 @@ export default function App() {
       </div>
     </div>
     
+    <div className="view-tabs">
+      <div className={`view-tab ${viewTab === "all" ? "active" : ""}`} onClick={() => setViewTab("all")}>전체 공고</div>
+      <div className={`view-tab ${viewTab === "applied" ? "active" : ""}`} onClick={() => setViewTab("applied")}>지원한 공고 ({Object.keys(applied).length})</div>
+    </div>
+    
     <div>
       <div className="stats-group">
         <div className="stat-pill stat-blue"><span>{act.length}</span>건</div>
@@ -344,10 +360,14 @@ export default function App() {
           {["전체","청년인턴","정규직","계약직"].map(v => <button key={v} className={`filter-btn ${tf===v?"active":""}`} onClick={() => setTf(v)}>{v}</button>)}
         </div>
         <div style={{ width: 1, background: "#e2e8f0" }}/>
+        <div className="filter-group">
+          <button className={`filter-btn ${mf==="전체"?"active":""}`} onClick={() => setMf("전체")}>전체 직무</button>
+          <button className={`filter-btn ${mf==="기술직"?"active":""}`} onClick={() => setMf("기술직")}>기술직만</button>
+        </div>
+        <div style={{ width: 1, background: "#e2e8f0" }}/>
         
         <div className="filter-group">
-          <button className={`filter-btn ${!showFav ? "active" : ""}`} onClick={() => setShowFav(false)}>전체보기</button>
-          <button className={`filter-btn ${showFav ? "active" : ""}`} onClick={() => setShowFav(true)} style={{ color: showFav ? "#fff" : "#fbbf24", borderColor: showFav ? "#2563eb" : "#fde68a", background: showFav ? "#2563eb" : "#fffbeb" }}>⭐ 관심공고</button>
+          <button className={`filter-btn ${showFav ? "active" : ""}`} onClick={() => setShowFav(!showFav)} style={{ color: showFav ? "#fff" : "#fbbf24", borderColor: showFav ? "#2563eb" : "#fde68a", background: showFav ? "#2563eb" : "#fffbeb" }}>⭐ 관심공고</button>
         </div>
       </div>
     </div>
@@ -396,7 +416,6 @@ export default function App() {
         ))}
       </div>
 
-      {/* 공간을 제한하지 않고 자연스럽게 밑으로 이어지는 상세 목록 */}
       {pn && sel && (
         <div className="detail-list-container">
           <div className="detail-list-header">
@@ -418,13 +437,13 @@ export default function App() {
 
     <section className="list-section">
       <div className="list-header">
-        <span>{showFav ? "관심 공고" : "진행중인 공고"} {act.length}건</span>
+        <span>{viewTab === "applied" ? "지원 완료 목록" : "진행중인 공고"} {act.length}건</span>
         <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>지원 체크는 저장됩니다</span>
       </div>
       <div className="scroll-area" style={{ paddingTop: 8 }}>
         {act.length === 0 ? (
           <div style={{ padding: "50px 0", textAlign: "center", color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>
-            {showFav ? "등록된 관심 공고가 없습니다." : "진행중인 공고가 없습니다."}
+            {viewTab === "applied" ? "지원 완료된 공고가 없습니다." : (showFav ? "등록된 관심 공고가 없습니다." : "진행중인 공고가 없습니다.")}
           </div>
         ) : (
           act.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
