@@ -28,11 +28,11 @@ function calcDD(end) {
   return { t: `D-${d}`, u: d <= 5, x: false };
 }
 
-function loadApplied() {
-  try { return JSON.parse(window.localStorage.getItem("applied") || "{}"); } catch { return {}; }
+function loadLocal(key) {
+  try { return JSON.parse(window.localStorage.getItem(key) || "{}"); } catch { return {}; }
 }
-function saveApplied(obj) {
-  try { window.localStorage.setItem("applied", JSON.stringify(obj)); } catch { /* noop */ }
+function saveLocal(key, obj) {
+  try { window.localStorage.setItem(key, JSON.stringify(obj)); } catch { /* noop */ }
 }
 
 export default function App() {
@@ -42,20 +42,33 @@ export default function App() {
   const [sel, setSel] = useState(null);
   const [lf, setLf] = useState("전체");
   const [tf, setTf] = useState("전체");
+  const [showFav, setShowFav] = useState(false); // 관심공고만 보기 필터
   const [jobs, setJobs] = useState([]);
   const [ld, setLd] = useState(true);
   const [demo, setDemo] = useState(false);
   const [apiError, setApiError] = useState(null); 
   const [lu, setLu] = useState(null);
   const [pn, setPn] = useState(false);
-  const [applied, setApplied] = useState(loadApplied);
+  
+  // 지원여부 및 관심공고(즐겨찾기) 상태
+  const [applied, setApplied] = useState(() => loadLocal("applied"));
+  const [favorites, setFavorites] = useState(() => loadLocal("favorites"));
   const ref = useRef();
 
   const toggleApplied = (id) => {
     setApplied(prev => {
       const next = { ...prev };
       if (next[id]) delete next[id]; else next[id] = true;
-      saveApplied(next);
+      saveLocal("applied", next);
+      return next;
+    });
+  };
+
+  const toggleFavorite = (id) => {
+    setFavorites(prev => {
+      const next = { ...prev };
+      if (next[id]) delete next[id]; else next[id] = true;
+      saveLocal("favorites", next);
       return next;
     });
   };
@@ -93,7 +106,13 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleEsc);
   }, []);
 
-  const fj = jobs.filter(j => (lf === "전체" || j.location === lf) && (tf === "전체" || j.type === tf || (tf === "계약직" && j.type === "무기계약직")));
+  // 필터 로직 (관심공고 필터 추가)
+  const fj = jobs.filter(j => 
+    (lf === "전체" || j.location === lf) && 
+    (tf === "전체" || j.type === tf || (tf === "계약직" && j.type === "무기계약직")) &&
+    (!showFav || favorites[j.id])
+  );
+
   const jfd = (ds) => fj.filter(j => j.startDate && j.endDate && inR(ds, j.startDate, j.endDate));
   
   const DIM = getDIM(yr, mo);
@@ -108,13 +127,6 @@ export default function App() {
 
   const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   const act = fj.filter(j => !calcDD(j.endDate).x);
-
-  let selectedWeekIdx = -1;
-  if (pn && sel) {
-    selectedWeekIdx = weeks.findIndex(week => week.includes(sel.day));
-  }
-
-  const visibleWeeks = selectedWeekIdx !== -1 ? [weeks[selectedWeekIdx]] : weeks;
 
   const click = (day) => {
     if (!day) return;
@@ -133,6 +145,7 @@ export default function App() {
   const JobCard = ({ job, showCheck }) => {
     const d = calcDD(job.endDate);
     const isApplied = applied[job.id];
+    const isFav = favorites[job.id];
     const targetUrl = (job.url && job.url !== "https://job.alio.go.kr/recruit.do") 
       ? job.url : `https://job.alio.go.kr/recruitView.do?pageNo=1&recrutPblntSn=${job.id}`;
 
@@ -140,9 +153,18 @@ export default function App() {
       <div className={`modern-card ${isApplied ? "applied-card" : ""}`}>
         <div className="card-accent" style={{ background: getTypeColor(job.type) }} />
         <div className="card-header">
-          <div className="card-title-group">
-            <h3 className="company-name">{job.company}</h3>
-            <p className="job-title">{job.title}</p>
+          <div className="card-title-group" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+            <button 
+              onClick={(e) => { e.stopPropagation(); toggleFavorite(job.id); }} 
+              className="fav-btn" 
+              title="관심공고 등록"
+            >
+              {isFav ? "⭐" : "☆"}
+            </button>
+            <div>
+              <h3 className="company-name">{job.company}</h3>
+              <p className="job-title">{job.title}</p>
+            </div>
           </div>
           <div className="card-action-group">
             <span className={`d-day-badge ${d.u || d.x ? "urgent" : ""}`}>{d.t}</span>
@@ -179,7 +201,6 @@ export default function App() {
     body { background-color: #f8fafc; color: #0f172a; }
     .app-container { min-height: 100vh; display: flex; flex-direction: column; }
     
-    /* 헤더 컴팩트화 */
     .header { background: #ffffff; padding: 16px 5%; box-shadow: 0 1px 2px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid #e2e8f0; }
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
     .title-area h1 { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin-top: 2px; }
@@ -203,7 +224,6 @@ export default function App() {
     
     .error-banner { background: #fef2f2; border-bottom: 1px solid #fca5a5; color: #b91c1c; padding: 10px 5%; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
-    /* 메인 그리드 밀도 향상 */
     .main-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1.2fr); gap: 24px; padding: 24px 5%; max-width: 1400px; margin: 0 auto; width: 100%; align-items: start; }
     
     .calendar-section { background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.02); padding: 20px; width: 100%; }
@@ -221,8 +241,6 @@ export default function App() {
     .cal-day-header.sat { color: #3b82f6; }
     
     .cal-week-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
-    
-    /* 캘린더 셀 크기 및 글씨 샤프하게 축소 */
     .cal-cell { min-height: 80px; border-radius: 8px; padding: 8px; border: 1px solid transparent; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 2px; background: #fff; }
     .cal-cell:hover { background: #f8fafc; border-color: #e2e8f0; }
     .cal-cell.today { background: #eff6ff; }
@@ -230,13 +248,14 @@ export default function App() {
     .date-num { font-size: 13px; font-weight: 700; color: #334155; }
     .date-num.sun { color: #ef4444; }
     .date-num.sat { color: #3b82f6; }
-    
-    /* 인라인 디테일 패널 축소 */
-    .detail-panel { margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 16px; animation: slideDown 0.2s ease-out forwards; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .close-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; color: #64748b; font-size: 12px; font-weight: bold; }
-    .close-btn:hover { background: #f1f5f9; color: #0f172a; }
+
+    /* 대형 팝업(모달) 스타일 추가 */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(3px); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s ease-out; }
+    .modal-content { background: #fff; border-radius: 16px; width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: slideUp 0.3s ease-out; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 16px 16px 0 0; }
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
     .list-section { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 120px); }
     .list-header { font-size: 14px; font-weight: 800; color: #0f172a; display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
@@ -244,12 +263,14 @@ export default function App() {
     .scroll-area::-webkit-scrollbar { width: 5px; }
     .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-    /* 카드 밀도 향상 */
     .modern-card { background: #ffffff; border-radius: 10px; padding: 14px; position: relative; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); transition: transform 0.15s, box-shadow 0.15s; margin-bottom: 10px; }
     .modern-card:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05); border-color: #cbd5e1; }
     .applied-card { opacity: 0.55; background: #f8fafc; }
     .card-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
     
+    .fav-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 0 4px 0 0; color: #fbbf24; transition: transform 0.2s; margin-top: -2px; }
+    .fav-btn:hover { transform: scale(1.15); }
+
     .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
     .card-title-group { flex: 1; }
     .company-name { font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 3px; line-height: 1.3; word-break: keep-all; }
@@ -261,12 +282,12 @@ export default function App() {
     .link-btn { background: #eff6ff; color: #2563eb; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; transition: background 0.15s; width: 100%; text-align: center; }
     .link-btn:hover { background: #dbeafe; }
 
-    .tag-group { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; align-items: center; }
+    .tag-group { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; align-items: center; padding-left: 20px; }
     .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
     .tag-location { background: #fffbeb; color: #b45309; }
     .people-count { font-size: 11.5px; color: #94a3b8; font-weight: 600; margin-left: 2px; }
 
-    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 10px; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 10px; padding-left: 20px; }
     .date-range { font-size: 11px; color: #64748b; font-family: monospace; letter-spacing: -0.3px; font-weight: 500; }
     
     .checkbox-wrapper { display: flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -279,6 +300,7 @@ export default function App() {
     @media (max-width: 1024px) {
       .main-grid { grid-template-columns: 1fr; gap: 20px; padding: 16px 5%; }
       .list-section { position: relative; top: 0; height: auto; }
+      .modal-content { max-height: 90vh; }
     }
   `}</style>
 
@@ -321,6 +343,13 @@ export default function App() {
         <div className="filter-group">
           {["전체","청년인턴","정규직","계약직"].map(v => <button key={v} className={`filter-btn ${tf===v?"active":""}`} onClick={() => setTf(v)}>{v}</button>)}
         </div>
+        <div style={{ width: 1, background: "#e2e8f0" }}/>
+        
+        {/* 관심공고 필터 토글 버튼 추가 */}
+        <div className="filter-group">
+          <button className={`filter-btn ${!showFav ? "active" : ""}`} onClick={() => setShowFav(false)}>전체보기</button>
+          <button className={`filter-btn ${showFav ? "active" : ""}`} onClick={() => setShowFav(true)} style={{ color: showFav ? "#fff" : "#fbbf24", borderColor: showFav ? "#2563eb" : "#fde68a", background: showFav ? "#2563eb" : "#fffbeb" }}>⭐ 관심공고</button>
+        </div>
       </div>
     </div>
   </header>
@@ -338,7 +367,7 @@ export default function App() {
       </div>
 
       <div>
-        {visibleWeeks.map((week, wIdx) => (
+        {weeks.map((week, wIdx) => (
           <div key={wIdx} className="cal-week-row">
             {week.map((day, dIdx) => {
               if (!day) return <div key={`e${wIdx}-${dIdx}`} className="cal-cell" style={{ background: "transparent", border: "none", cursor: "default" }} />;
@@ -368,20 +397,23 @@ export default function App() {
         ))}
       </div>
 
+      {/* 날짜 클릭 시 나타나는 대형 팝업(모달) 창 */}
       {pn && sel && (
-        <div className="detail-panel">
-          <div className="detail-header">
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>
-              {mo+1}/{sel.day} <span style={{ color: "#2563eb", fontSize: 14, marginLeft: 6 }}>{sel.jobs.length}건</span>
-            </h3>
-            <button className="close-btn" onClick={() => setPn(false)}>✕</button>
-          </div>
-          <div style={{ maxHeight: "280px", overflowY: "auto", paddingRight: 6 }} className="scroll-area">
-            {sel.jobs.length === 0 ? (
-              <div style={{ padding: "30px 0", textAlign: "center", color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>해당 날짜에 마감되는 공고가 없습니다.</div>
-            ) : (
-              sel.jobs.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
-            )}
+        <div className="modal-overlay" onClick={() => setPn(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: 0 }}>
+                {mo+1}월 {sel.day}일 마감 공고 <span style={{ color: "#2563eb", fontSize: 16, marginLeft: 6 }}>{sel.jobs.length}건</span>
+              </h3>
+              <button onClick={() => setPn(false)} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#64748b" }}>✕</button>
+            </div>
+            <div className="modal-body scroll-area">
+              {sel.jobs.length === 0 ? (
+                <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontSize: 14, fontWeight: 600 }}>마감되는 공고가 없습니다.</div>
+              ) : (
+                sel.jobs.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -389,12 +421,14 @@ export default function App() {
 
     <section className="list-section">
       <div className="list-header">
-        <span>진행중인 공고 {act.length}건</span>
+        <span>{showFav ? "관심 공고" : "진행중인 공고"} {act.length}건</span>
         <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>지원 체크는 저장됩니다</span>
       </div>
       <div className="scroll-area" style={{ paddingTop: 8 }}>
         {act.length === 0 ? (
-          <div style={{ padding: "50px 0", textAlign: "center", color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>진행중인 공고가 없습니다.</div>
+          <div style={{ padding: "50px 0", textAlign: "center", color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>
+            {showFav ? "등록된 관심 공고가 없습니다." : "진행중인 공고가 없습니다."}
+          </div>
         ) : (
           act.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
         )}
