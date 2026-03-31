@@ -47,7 +47,7 @@ export default function App() {
   const [jobs, setJobs] = useState([]);
   const [ld, setLd] = useState(true);
   const [demo, setDemo] = useState(false);
-  const [apiError, setApiError] = useState(null); // 에러 원인 파악용 상태 추가
+  const [apiError, setApiError] = useState(null); 
   const [lu, setLu] = useState(null);
   const [pn, setPn] = useState(false);
   const [applied, setApplied] = useState(loadApplied);
@@ -80,7 +80,7 @@ export default function App() {
       }
       setLu(j.lastUpdated || new Date().toISOString());
     } catch (e) {
-      setApiError(e.message); // 어떤 에러인지 화면에 띄우기 위해 저장
+      setApiError(e.message); 
       setJobs(DEMO); setDemo(true); setLu(new Date().toISOString());
     } finally { 
       setLd(false); 
@@ -130,7 +130,6 @@ export default function App() {
             <h3 className="company-name">{job.company}</h3>
             <p className="job-title">{job.title}</p>
           </div>
-          {/* 요청하신 대로 디데이 태그 아래에 링크 버튼 배치 */}
           <div className="card-action-group">
             <span className={`d-day-badge ${d.u || d.x ? "urgent" : ""}`}>{d.t}</span>
             <button onClick={(e) => { e.stopPropagation(); window.open(targetUrl, "_blank"); }} className="link-btn">링크</button>
@@ -168,30 +167,29 @@ export default function App() {
     
     .app-container { min-height: 100vh; display: flex; flex-direction: column; }
     
-    /* 헤더 영역 */
     .header { background: #ffffff; padding: 24px 5%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 10; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
     .title-area h1 { font-size: 22px; font-weight: 800; color: #111827; letter-spacing: -0.5px; }
-    .title-area span { font-size: 12px; color: #6b7280; font-weight: 600; }
+    .title-area span { font-size: 12px; color: #6b7280; font-weight: 600; display: flex; align-items: center; gap: 6px; }
     
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+    .status-dot.loading { background: #f59e0b; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
     .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .filter-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #e5e7eb; background: #fff; color: #4b5563; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .filter-btn:hover { background: #f9fafb; border-color: #d1d5db; }
     .filter-btn.active { background: #111827; color: #ffffff; border-color: #111827; }
     
-    /* 에러 표시 바 (데모 원인 파악용) */
     .error-banner { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; padding: 12px 5%; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
     .demo-banner { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; padding: 12px 5%; font-size: 14px; font-weight: 600; text-align: center; }
 
-    /* 모바일 탭 */
     .mobile-tabs { display: none; background: #fff; border-bottom: 1px solid #e5e7eb; }
     .tab { flex: 1; text-align: center; padding: 14px 0; font-size: 15px; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; cursor: pointer; }
     .tab.active { color: #111827; border-bottom-color: #111827; }
 
-    /* 메인 그리드 (반응형 비율 핵심) */
     .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; padding: 24px 5%; max-width: 1600px; margin: 0 auto; width: 100%; align-items: start; }
     
-    /* 캘린더 섹션 */
     .calendar-section { background: #ffffff; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); padding: 24px; }
     .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .cal-nav-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
@@ -214,14 +212,12 @@ export default function App() {
     .dots-wrap { display: flex; flex-wrap: wrap; gap: 4px; }
     .dot { width: 8px; height: 8px; border-radius: 50%; }
 
-    /* 리스트 섹션 */
     .list-section { position: sticky; top: 120px; display: flex; flex-direction: column; gap: 16px; height: calc(100vh - 140px); }
     .list-header { font-size: 16px; font-weight: 700; color: #111827; display: flex; justify-content: space-between; align-items: center; }
     .scroll-area { overflow-y: auto; padding-right: 8px; padding-bottom: 24px; }
     .scroll-area::-webkit-scrollbar { width: 6px; }
     .scroll-area::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
 
-    /* 카드 디자인 (미감 개선) */
     .modern-card { background: #ffffff; border-radius: 16px; padding: 20px; position: relative; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 16px; }
     .modern-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
     .applied-card { opacity: 0.6; background: #f9fafb; }
@@ -232,7 +228,6 @@ export default function App() {
     .company-name { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 4px; line-height: 1.3; }
     .job-title { font-size: 14px; color: #4b5563; line-height: 1.4; }
     
-    /* 우측 액션 영역 (디데이 아래 링크) */
     .card-action-group { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
     .d-day-badge { background: #f3f4f6; color: #4b5563; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; }
     .d-day-badge.urgent { background: #fef2f2; color: #dc2626; }
@@ -257,13 +252,11 @@ export default function App() {
     .checkbox-label { font-size: 13px; color: #6b7280; font-weight: 600; transition: color 0.2s; }
     .checked-text { color: #111827; }
 
-    /* 반응형 처리: 태블릿 및 가로모드 모바일 */
     @media (max-width: 1024px) {
       .main-grid { grid-template-columns: 1.2fr 1fr; gap: 16px; padding: 16px 4%; }
       .cal-cell { min-height: 80px; }
     }
 
-    /* 반응형 처리: 세로모드 모바일 */
     @media (max-width: 768px) {
       .mobile-tabs { display: flex; }
       .main-grid { display: block; padding: 0; }
@@ -274,7 +267,6 @@ export default function App() {
     }
   `}</style>
 
-  {/* 디버깅용 에러 배너 (API가 실패하면 빨간색으로 화면 상단에 원인을 띄움) */}
   {apiError && (
     <div className="error-banner">
       <span>🚨 Vercel 서버 통신 에러 발생! 아래 원인을 확인하세요.</span>
@@ -286,7 +278,12 @@ export default function App() {
   <header className="header">
     <div className="header-top">
       <div className="title-area">
-        <span>JOB ALIO</span>
+        <span>
+          JOB ALIO 
+          {/* ESLint 에러 해결: ld, lu 변수를 UI에 사용 */}
+          <span className={`status-dot ${ld ? 'loading' : ''}`} />
+          {ld ? "업데이트 중..." : (lu ? `${new Date(lu).toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"})} 갱신` : "")}
+        </span>
         <h1>대전·창원 채용 달력</h1>
       </div>
     </div>
