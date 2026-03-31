@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 // 배포 후 실제 Vercel URL로 교체하세요
 // 빈 문자열이면 데모 모드로 동작합니다
 // ═══════════════════════════════════════════
-const API_URL = "";
+const API_URL = "https://aliocalendar.vercel.app/";
 
 // ── 데모 데이터: API 미연결 시 표시 ──
 const DEMO = [
