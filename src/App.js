@@ -87,6 +87,12 @@ export default function App() {
     return () => clearInterval(ref.current);
   }, [load]);
 
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') setPn(false); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
+
   const fj = jobs.filter(j => (lf === "전체" || j.location === lf) && (tf === "전체" || j.type === tf || (tf === "계약직" && j.type === "무기계약직")));
   const jfd = (ds) => fj.filter(j => j.startDate && j.endDate && inR(ds, j.startDate, j.endDate));
   
@@ -146,7 +152,7 @@ export default function App() {
         
         <div className="tag-group">
           <span className="tag" style={{ background: `${getTypeColor(job.type)}15`, color: getTypeColor(job.type) }}>{job.type}</span>
-          {job.subType && <span className="tag" style={{ background: "#f3f4f6", color: "#4b5563" }}>{job.subType}</span>}
+          {job.subType && <span className="tag" style={{ background: "#f1f5f9", color: "#475569" }}>{job.subType}</span>}
           <span className="tag tag-location">{job.location}</span>
           {job.people > 0 && <span className="people-count">{job.people}명</span>}
         </div>
@@ -173,108 +179,112 @@ export default function App() {
     body { background-color: #f8fafc; color: #0f172a; }
     .app-container { min-height: 100vh; display: flex; flex-direction: column; }
     
-    .header { background: #ffffff; padding: 20px 40px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid #e2e8f0; }
+    /* 헤더 컴팩트화 */
+    .header { background: #ffffff; padding: 16px 5%; box-shadow: 0 1px 2px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 10; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid #e2e8f0; }
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
-    .title-area h1 { font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin-top: 4px; }
-    .title-area span.label { font-size: 13px; color: #64748b; font-weight: 700; letter-spacing: 1px; }
+    .title-area h1 { font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin-top: 2px; }
+    .title-area span.label { font-size: 11px; color: #64748b; font-weight: 700; letter-spacing: 1px; }
     
-    .update-info { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; font-weight: 500; }
-    .update-btn { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; transition: all 0.2s; }
+    .update-info { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; font-weight: 500; }
+    .update-btn { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 12px; transition: all 0.2s; }
     .update-btn:hover { background: #e2e8f0; color: #0f172a; }
 
-    .stats-group { display: flex; gap: 8px; margin-bottom: 4px; }
-    .stat-pill { padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; display: flex; gap: 4px; align-items: center; }
+    .stats-group { display: flex; gap: 6px; margin-bottom: 6px; }
+    .stat-pill { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: flex; gap: 4px; align-items: center; }
     .stat-blue { background: #eff6ff; color: #2563eb; }
     .stat-green { background: #ecfdf5; color: #059669; }
     .stat-purple { background: #f5f3ff; color: #7c3aed; }
 
-    .filter-row { display: flex; gap: 16px; flex-wrap: wrap; }
-    .filter-group { display: flex; gap: 6px; }
-    .filter-btn { padding: 6px 14px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .filter-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .filter-group { display: flex; gap: 4px; }
+    .filter-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #475569; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .filter-btn:hover { background: #f8fafc; border-color: #94a3b8; }
     .filter-btn.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
     
-    .error-banner { background: #fef2f2; border-bottom: 1px solid #fca5a5; color: #b91c1c; padding: 12px 40px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+    .error-banner { background: #fef2f2; border-bottom: 1px solid #fca5a5; color: #b91c1c; padding: 10px 5%; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
-    .main-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(360px, 1fr); gap: 32px; padding: 32px 40px; max-width: 1800px; margin: 0 auto; width: 100%; align-items: start; }
+    /* 메인 그리드 밀도 향상 */
+    .main-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1.2fr); gap: 24px; padding: 24px 5%; max-width: 1400px; margin: 0 auto; width: 100%; align-items: start; }
     
-    .calendar-section { background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); padding: 32px; width: 100%; transition: all 0.3s ease; }
-    .cal-header { display: flex; justify-content: center; align-items: center; margin-bottom: 32px; position: relative; }
-    .cal-nav-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; position: absolute; color: #64748b; transition: all 0.2s; }
+    .calendar-section { background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.02); padding: 20px; width: 100%; }
+    .cal-header { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; position: relative; }
+    .cal-nav-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; position: absolute; color: #64748b; transition: all 0.2s; }
     .cal-nav-btn:hover { background: #f1f5f9; color: #0f172a; }
     .btn-prev { left: 0; }
     .btn-next { right: 0; }
-    .cal-title { font-size: 28px; font-weight: 800; color: #0f172a; }
-    .cal-title span { font-size: 18px; color: #94a3b8; font-weight: 600; margin-left: 8px; }
+    .cal-title { font-size: 20px; font-weight: 800; color: #0f172a; }
+    .cal-title span { font-size: 14px; color: #94a3b8; font-weight: 600; margin-left: 6px; }
     
-    .cal-day-header-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 16px; }
-    .cal-day-header { text-align: center; font-size: 15px; font-weight: 700; color: #64748b; }
+    .cal-day-header-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 12px; }
+    .cal-day-header { text-align: center; font-size: 12px; font-weight: 700; color: #64748b; }
     .cal-day-header.sun { color: #ef4444; }
     .cal-day-header.sat { color: #3b82f6; }
     
-    .cal-week-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 12px; }
-    .cal-cell { min-height: 120px; border-radius: 12px; padding: 12px; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 4px; background: #fff; }
+    .cal-week-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
+    
+    /* 캘린더 셀 크기 및 글씨 샤프하게 축소 */
+    .cal-cell { min-height: 80px; border-radius: 8px; padding: 8px; border: 1px solid transparent; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; gap: 2px; background: #fff; }
     .cal-cell:hover { background: #f8fafc; border-color: #e2e8f0; }
     .cal-cell.today { background: #eff6ff; }
     .cal-cell.selected { background: #eff6ff; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
-    .date-num { font-size: 18px; font-weight: 700; color: #334155; }
+    .date-num { font-size: 13px; font-weight: 700; color: #334155; }
     .date-num.sun { color: #ef4444; }
     .date-num.sat { color: #3b82f6; }
     
-    .detail-panel { margin-top: 16px; border-top: 2px dashed #e2e8f0; padding-top: 24px; animation: slideDown 0.3s ease-out forwards; }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .close-btn { width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; color: #64748b; font-size: 14px; font-weight: bold; }
+    /* 인라인 디테일 패널 축소 */
+    .detail-panel { margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 16px; animation: slideDown 0.2s ease-out forwards; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .close-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; color: #64748b; font-size: 12px; font-weight: bold; }
     .close-btn:hover { background: #f1f5f9; color: #0f172a; }
 
-    .list-section { position: sticky; top: 120px; display: flex; flex-direction: column; gap: 16px; height: calc(100vh - 140px); }
-    .list-header { font-size: 17px; font-weight: 800; color: #0f172a; display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
-    .scroll-area { overflow-y: auto; padding-right: 12px; padding-bottom: 24px; }
-    .scroll-area::-webkit-scrollbar { width: 6px; }
+    .list-section { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 120px); }
+    .list-header { font-size: 14px; font-weight: 800; color: #0f172a; display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    .scroll-area { overflow-y: auto; padding-right: 8px; padding-bottom: 20px; }
+    .scroll-area::-webkit-scrollbar { width: 5px; }
     .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-    .modern-card { background: #ffffff; border-radius: 14px; padding: 20px; position: relative; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 16px; }
-    .modern-card:hover { transform: translateY(-2px); box-shadow: 0 8px 12px -3px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+    /* 카드 밀도 향상 */
+    .modern-card { background: #ffffff; border-radius: 10px; padding: 14px; position: relative; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); transition: transform 0.15s, box-shadow 0.15s; margin-bottom: 10px; }
+    .modern-card:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05); border-color: #cbd5e1; }
     .applied-card { opacity: 0.55; background: #f8fafc; }
-    .card-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+    .card-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
     
-    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 12px; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 10px; }
     .card-title-group { flex: 1; }
-    .company-name { font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 4px; line-height: 1.3; word-break: keep-all; }
-    .job-title { font-size: 14px; color: #475569; line-height: 1.4; word-break: keep-all; }
+    .company-name { font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 3px; line-height: 1.3; word-break: keep-all; }
+    .job-title { font-size: 12px; color: #475569; line-height: 1.3; word-break: keep-all; }
     
-    .card-action-group { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
-    .d-day-badge { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 800; text-align: center; min-width: 56px; }
+    .card-action-group { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+    .d-day-badge { background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; text-align: center; min-width: 48px; }
     .d-day-badge.urgent { background: #fef2f2; color: #dc2626; }
-    .link-btn { background: #eff6ff; color: #2563eb; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 800; cursor: pointer; transition: background 0.2s; width: 100%; text-align: center; }
+    .link-btn { background: #eff6ff; color: #2563eb; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 800; cursor: pointer; transition: background 0.15s; width: 100%; text-align: center; }
     .link-btn:hover { background: #dbeafe; }
 
-    .tag-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; align-items: center; }
-    .tag { padding: 4px 10px; border-radius: 6px; font-size: 12.5px; font-weight: 700; }
+    .tag-group { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; align-items: center; }
+    .tag { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
     .tag-location { background: #fffbeb; color: #b45309; }
-    .people-count { font-size: 13px; color: #94a3b8; font-weight: 600; margin-left: 2px; }
+    .people-count { font-size: 11.5px; color: #94a3b8; font-weight: 600; margin-left: 2px; }
 
-    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 14px; }
-    .date-range { font-size: 13px; color: #64748b; font-family: monospace; letter-spacing: -0.5px; font-weight: 500; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 10px; }
+    .date-range { font-size: 11px; color: #64748b; font-family: monospace; letter-spacing: -0.3px; font-weight: 500; }
     
-    .checkbox-wrapper { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .checkbox-wrapper { display: flex; align-items: center; gap: 6px; cursor: pointer; }
     .checkbox-wrapper input { display: none; }
-    .custom-checkbox { width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: white; transition: all 0.2s; }
+    .custom-checkbox { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: white; transition: all 0.15s; }
     .checkbox-wrapper input:checked + .custom-checkbox { background: #0f172a; border-color: #0f172a; }
-    .checkbox-label { font-size: 13px; color: #64748b; font-weight: 600; transition: color 0.2s; }
+    .checkbox-label { font-size: 12px; color: #64748b; font-weight: 600; transition: color 0.15s; }
     .checked-text { color: #0f172a; }
 
     @media (max-width: 1024px) {
-      .main-grid { grid-template-columns: 1fr; gap: 24px; padding: 20px; }
-      .cal-cell { min-height: 100px; }
+      .main-grid { grid-template-columns: 1fr; gap: 20px; padding: 16px 5%; }
       .list-section { position: relative; top: 0; height: auto; }
-      .header { padding: 20px; }
     }
   `}</style>
 
   {apiError && (
     <div className="error-banner">
-      <span style={{ fontSize: 18 }}>🚨</span>
+      <span style={{ fontSize: 16 }}>🚨</span>
       <span>Vercel 서버 통신 에러 발생! {apiError}</span>
     </div>
   )}
@@ -331,7 +341,7 @@ export default function App() {
         {visibleWeeks.map((week, wIdx) => (
           <div key={wIdx} className="cal-week-row">
             {week.map((day, dIdx) => {
-              if (!day) return <div key={`e${wIdx}-${dIdx}`} className="cal-cell" style={{ background: "transparent", border: "none" }} />;
+              if (!day) return <div key={`e${wIdx}-${dIdx}`} className="cal-cell" style={{ background: "transparent", border: "none", cursor: "default" }} />;
               
               const ds = `${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
               const dj = jfd(ds);
@@ -343,12 +353,12 @@ export default function App() {
                 <div key={day} className={`cal-cell ${isT?'today':''} ${isS?'selected':''}`} onClick={() => click(day)}>
                   <span className={`date-num ${dow===0?'sun':dow===6?'sat':''}`}>{day}</span>
                   
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "auto", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "3px", marginTop: "auto", flexWrap: "wrap" }}>
                     {dj.slice(0, 3).map((job, k) => (
-                      <div key={k} style={{ width: "8px", height: "8px", borderRadius: "50%", background: getTypeColor(job.type) }} />
+                      <div key={k} style={{ width: "6px", height: "6px", borderRadius: "50%", background: getTypeColor(job.type) }} />
                     ))}
                     {dj.length > 3 && (
-                      <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "800", marginLeft: "2px" }}>+{dj.length - 3}</span>
+                      <span style={{ fontSize: "11px", color: "#64748b", fontWeight: "700", marginLeft: "1px" }}>+{dj.length - 3}</span>
                     )}
                   </div>
                 </div>
@@ -361,14 +371,14 @@ export default function App() {
       {pn && sel && (
         <div className="detail-panel">
           <div className="detail-header">
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: "#0f172a" }}>
-              {mo+1}/{sel.day} <span style={{ color: "#2563eb", fontSize: 18, marginLeft: 8 }}>{sel.jobs.length}건</span>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: "#0f172a" }}>
+              {mo+1}/{sel.day} <span style={{ color: "#2563eb", fontSize: 14, marginLeft: 6 }}>{sel.jobs.length}건</span>
             </h3>
             <button className="close-btn" onClick={() => setPn(false)}>✕</button>
           </div>
-          <div style={{ maxHeight: "500px", overflowY: "auto", paddingRight: 8 }} className="scroll-area">
+          <div style={{ maxHeight: "280px", overflowY: "auto", paddingRight: 6 }} className="scroll-area">
             {sel.jobs.length === 0 ? (
-              <div style={{ padding: "40px 0", textAlign: "center", color: "#94a3b8", fontWeight: 600 }}>해당 날짜에 마감되는 공고가 없습니다.</div>
+              <div style={{ padding: "30px 0", textAlign: "center", color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>해당 날짜에 마감되는 공고가 없습니다.</div>
             ) : (
               sel.jobs.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
             )}
@@ -380,11 +390,11 @@ export default function App() {
     <section className="list-section">
       <div className="list-header">
         <span>진행중인 공고 {act.length}건</span>
-        <span style={{ fontSize: 13, color: "#64748b", fontWeight: 600 }}>지원 체크는 브라우저에 저장됩니다</span>
+        <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>지원 체크는 저장됩니다</span>
       </div>
-      <div className="scroll-area" style={{ paddingTop: 16 }}>
+      <div className="scroll-area" style={{ paddingTop: 8 }}>
         {act.length === 0 ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: "#94a3b8", fontWeight: 600 }}>진행중인 공고가 없습니다.</div>
+          <div style={{ padding: "50px 0", textAlign: "center", color: "#94a3b8", fontSize: 13, fontWeight: 600 }}>진행중인 공고가 없습니다.</div>
         ) : (
           act.slice().sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map(job => <JobCard key={job.id} job={job} showCheck={true} />)
         )}
