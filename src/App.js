@@ -101,6 +101,8 @@ export default function App() {
   for (let i = 0; i < FD; i++) cells.push(null);
   for (let d = 1; d <= DIM; d++) cells.push(d);
   const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  
+  // 마감 안 된(진행 중인) 공고만 필터링
   const act = fj.filter(j => !calcDD(j.endDate).x);
 
   const click = (day) => {
@@ -115,15 +117,25 @@ export default function App() {
   const JobCard = ({ job, showCheck }) => {
     const d = calcDD(job.endDate);
     const isApplied = applied[job.id];
+    
+    // 원문 상세 URL 파싱 (API가 상세 주소를 안 주면 id로 직접 연결)
+    const targetUrl = (job.url && job.url !== "https://job.alio.go.kr/recruit.do") 
+      ? job.url 
+      : `https://job.alio.go.kr/recruitView.do?pageNo=1&recrutPblntSn=${job.id}`;
+
     return (
       <div className="jc" style={{ opacity: isApplied ? 0.55 : 1 }}>
         <div className="jc-bar" style={{ background: job.type === "청년인턴" ? "#16a34a" : "#2563eb" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, paddingRight: 10 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#1a1a1a", marginBottom: 2, lineHeight: 1.3 }}>{job.company}</div>
             <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.4 }}>{job.title}</div>
           </div>
-          <span className={`dd ${d.u || d.x ? "ur" : ""}`}>{d.t}</span>
+          {/* 링크와 D-Day를 우측 상단으로 이동 */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            <button onClick={(e) => { e.stopPropagation(); window.open(targetUrl, "_blank"); }} className="link-btn">링크</button>
+            <span className={`dd ${d.u || d.x ? "ur" : ""}`}>{d.t}</span>
+          </div>
         </div>
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 6, alignItems: "center" }}>
           <span className={`tag ${job.type === "청년인턴" ? "tag-i" : "tag-r"}`}>{job.type}</span>
@@ -133,16 +145,13 @@ export default function App() {
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: 11, color: "#9ca3af", fontFamily: "'IBM Plex Mono',monospace" }}>{fmt(job.startDate)} ~ {fmt(job.endDate)}</span>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <button onClick={(e) => { e.stopPropagation(); window.open(job.url, "_blank"); }} className="link-btn">지원서</button>
-            {showCheck && (
-              <label className="chk" onClick={(e) => e.stopPropagation()}>
-                <input type="checkbox" checked={!!isApplied} onChange={() => toggleApplied(job.id)} />
-                <span className="chk-box">{isApplied ? "✓" : ""}</span>
-                <span style={{ fontSize: 11, color: isApplied ? "#16a34a" : "#9ca3af" }}>{isApplied ? "지원완료" : "미지원"}</span>
-              </label>
-            )}
-          </div>
+          {showCheck && (
+            <label className="chk" onClick={(e) => e.stopPropagation()}>
+              <input type="checkbox" checked={!!isApplied} onChange={() => toggleApplied(job.id)} />
+              <span className="chk-box">{isApplied ? "✓" : ""}</span>
+              <span style={{ fontSize: 11, color: isApplied ? "#16a34a" : "#9ca3af" }}>{isApplied ? "지원완료" : "미지원"}</span>
+            </label>
+          )}
         </div>
       </div>
     );
@@ -189,12 +198,25 @@ export default function App() {
     .tab-btn{flex:1;padding:10px 0;text-align:center;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;font-family:inherit;transition:all .15s}
     .tab-btn.on{color:#2563eb;border-bottom-color:#2563eb;font-weight:600}
     .tab-btn:hover{color:#374151}
-    .link-btn{padding:3px 10px;border-radius:5px;border:1px solid #dbeafe;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
-    .link-btn:hover{background:#dbeafe}
+    /* 링크 버튼 디자인 상단 강조형으로 변경 */
+    .link-btn{padding:4px 12px;border-radius:6px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+    .link-btn:hover{background:#dbeafe;border-color:#93c5fd}
     .chk{display:flex;align-items:center;gap:4px;cursor:pointer}
     .chk input{display:none}
     .chk-box{width:18px;height:18px;border-radius:4px;border:1.5px solid #d1d5db;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;transition:all .15s}
     .chk input:checked+.chk-box{background:#16a34a;border-color:#16a34a}
+    
+    /* PC: 달력 크게, 리스트 작게 고정 */
+    .main-layout { display: flex; flex-direction: column; gap: 20px; max-width: 1200px; margin: 0 auto; }
+    .mobile-hide { display: none !important; }
+    
+    @media (min-width: 1024px) {
+      .main-layout { flex-direction: row; align-items: flex-start; padding: 20px; }
+      .calendar-section { flex: 1; background: #fff; border-radius: 16px; padding: 20px; border: 1px solid #e5e7eb; display: block !important; }
+      /* 우측 리스트 영역 320px로 고정 */
+      .list-section { flex: 0 0 320px; position: sticky; top: 20px; max-height: calc(100vh - 40px); display: block !important; }
+      .tab-bar { display: none; }
+    }
   `}</style>
 
   {/* 헤더 */}
@@ -229,91 +251,93 @@ export default function App() {
 
   {demo && <div className="demo-bar">DEMO 모드 · API 연결 후 실제 데이터로 전환됩니다</div>}
 
-  {/* 탭 */}
+  {/* 모바일용 탭 바 */}
   <div className="tab-bar">
     <button className={`tab-btn ${tab==="calendar"?"on":""}`} onClick={() => setTab("calendar")}>📅 달력</button>
     <button className={`tab-btn ${tab==="list"?"on":""}`} onClick={() => setTab("list")}>📋 전체 목록</button>
   </div>
 
-  {/* ═══ 달력 탭 ═══ */}
-  {tab === "calendar" && (
-  <div style={{ padding: "12px 14px 6px" }}>
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-      <button className="nb" onClick={pv}>‹</button>
-      <div><span style={{ fontSize: 20, fontWeight: 700 }}>{MO[mo]}</span><span className="mn" style={{ fontSize: 13, color: "#9ca3af", marginLeft: 8 }}>{yr}</span></div>
-      <button className="nb" onClick={nx}>›</button>
-    </div>
-
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 2 }}>
-      {DAYS_KR.map((d, i) => <div key={d} style={{ textAlign: "left", paddingLeft: 5, fontSize: 10, fontWeight: 600, color: i === 0 ? "#ef4444" : i === 6 ? "#3b82f6" : "#9ca3af", padding: "3px 0 3px 5px" }}>{d}</div>)}
-    </div>
-
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
-      {cells.map((day, i) => {
-        if (!day) return <div key={`e${i}`}/>;
-        const ds = `${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-        const dj = jfd(ds);
-        const isT = ds === ts;
-        const isS = sel?.ds === ds;
-        const dow = (FD + day - 1) % 7;
-        return (
-          <div key={day} className={`cel ${isT?"td":""} ${isS?"sl":""}`} onClick={() => click(day)}>
-            <span className="mn" style={{ fontSize: 11, fontWeight: isT ? 700 : 400, color: isS ? "#2563eb" : isT ? "#2563eb" : dow === 0 ? "#ef4444" : dow === 6 ? "#3b82f6" : "#374151" }}>{day}</span>
-            {dj.length > 0 && (
-              <div style={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-                {dj.slice(0, 4).map((_, k) => <div key={k} style={{ width: 4, height: 4, borderRadius: "50%", background: dj[k].type === "청년인턴" ? "#16a34a" : "#2563eb" }}/>)}
-                {dj.length > 4 && <span style={{ fontSize: 7, color: "#9ca3af" }}>+{dj.length - 4}</span>}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-
-    {/* 날짜 클릭 패널 */}
-    {pn && sel && (
-    <div className={`pn ${pi?"in":"out"}`} style={{ marginTop: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
-      <div style={{ padding: "10px 14px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span className="mn" style={{ fontSize: 14, fontWeight: 700 }}>{mo+1}/{sel.day}</span>
-          <span style={{ fontSize: 12, color: sel.jobs.length ? "#2563eb" : "#9ca3af", fontWeight: 500 }}>{sel.jobs.length ? `${sel.jobs.length}건` : "공고 없음"}</span>
-        </div>
-        <button onClick={() => { setPn(false); setSel(null); }} style={{ width: 24, height: 24, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", color: "#9ca3af", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>✕</button>
+  {/* 메인 레이아웃 */}
+  <div className="main-layout">
+    
+    {/* ══ 왼쪽: 달력 섹션 ══ */}
+    <div className={`calendar-section ${(tab !== 'calendar') ? 'mobile-hide' : ''}`} style={tab === 'calendar' ? { padding: "12px 14px 6px" } : {}}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <button className="nb" onClick={pv}>‹</button>
+        <div><span style={{ fontSize: 20, fontWeight: 700 }}>{MO[mo]}</span><span className="mn" style={{ fontSize: 13, color: "#9ca3af", marginLeft: 8 }}>{yr}</span></div>
+        <button className="nb" onClick={nx}>›</button>
       </div>
-      <div className="sc" style={{ maxHeight: 340, padding: "8px 10px 10px" }}>
-        {sel.jobs.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "30px 0", color: "#d1d5db" }}>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 2 }}>
+        {DAYS_KR.map((d, i) => <div key={d} style={{ textAlign: "left", paddingLeft: 5, fontSize: 10, fontWeight: 600, color: i === 0 ? "#ef4444" : i === 6 ? "#3b82f6" : "#9ca3af", padding: "3px 0 3px 5px" }}>{d}</div>)}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+        {cells.map((day, i) => {
+          if (!day) return <div key={`e${i}`}/>;
+          const ds = `${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+          const dj = jfd(ds);
+          const isT = ds === ts;
+          const isS = sel?.ds === ds;
+          const dow = (FD + day - 1) % 7;
+          return (
+            <div key={day} className={`cel ${isT?"td":""} ${isS?"sl":""}`} onClick={() => click(day)}>
+              <span className="mn" style={{ fontSize: 11, fontWeight: isT ? 700 : 400, color: isS ? "#2563eb" : isT ? "#2563eb" : dow === 0 ? "#ef4444" : dow === 6 ? "#3b82f6" : "#374151" }}>{day}</span>
+              {dj.length > 0 && (
+                <div style={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+                  {dj.slice(0, 4).map((_, k) => <div key={k} style={{ width: 4, height: 4, borderRadius: "50%", background: dj[k].type === "청년인턴" ? "#16a34a" : "#2563eb" }}/>)}
+                  {dj.length > 4 && <span style={{ fontSize: 7, color: "#9ca3af" }}>+{dj.length - 4}</span>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 날짜 클릭 패널 */}
+      {pn && sel && (
+      <div className={`pn ${pi?"in":"out"}`} style={{ marginTop: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden" }}>
+        <div style={{ padding: "10px 14px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="mn" style={{ fontSize: 14, fontWeight: 700 }}>{mo+1}/{sel.day}</span>
+            <span style={{ fontSize: 12, color: sel.jobs.length ? "#2563eb" : "#9ca3af", fontWeight: 500 }}>{sel.jobs.length ? `${sel.jobs.length}건` : "공고 없음"}</span>
+          </div>
+          <button onClick={() => { setPn(false); setSel(null); }} style={{ width: 24, height: 24, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", color: "#9ca3af", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>✕</button>
+        </div>
+        <div className="sc" style={{ maxHeight: 340, padding: "8px 10px 10px" }}>
+          {sel.jobs.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "30px 0", color: "#d1d5db" }}>
+              <div style={{ fontSize: 24, marginBottom: 4 }}>📭</div>
+              <div style={{ fontSize: 12 }}>해당 날짜에 공고가 없습니다</div>
+            </div>
+          ) : (
+            sel.jobs.map((job, i) => <JobCard key={job.id || i} job={job} showCheck={true} />)
+          )}
+        </div>
+      </div>
+      )}
+    </div>
+
+    {/* ══ 오른쪽: 전체 목록 섹션 (진행 중인 공고만) ══ */}
+    <div className={`list-section ${(tab !== 'list') ? 'mobile-hide' : ''}`} style={tab === 'list' ? { padding: "12px 14px" } : {}}>
+      <div style={{ marginBottom: 10, fontSize: 13, color: "#6b7280" }}>
+        진행중인 공고 {act.length}건 · 지원 체크는 브라우저에 저장됩니다
+      </div>
+      <div className="sc" style={{ maxHeight: "calc(100vh - 200px)", paddingRight: "4px" }}>
+        {act.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#d1d5db" }}>
             <div style={{ fontSize: 24, marginBottom: 4 }}>📭</div>
-            <div style={{ fontSize: 12 }}>해당 날짜에 공고가 없습니다</div>
+            <div style={{ fontSize: 12 }}>조건에 맞는 진행중인 공고가 없습니다</div>
           </div>
         ) : (
-          sel.jobs.map((job, i) => <JobCard key={job.id || i} job={job} showCheck={true} />)
+          act.sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map((job, i) => <JobCard key={job.id || i} job={job} showCheck={true} />)
         )}
       </div>
     </div>
-    )}
-  </div>
-  )}
 
-  {/* ═══ 전체 목록 탭 ═══ */}
-  {tab === "list" && (
-  <div style={{ padding: "12px 14px" }}>
-    <div style={{ marginBottom: 10, fontSize: 13, color: "#6b7280" }}>
-      {fj.length}건 · 지원 체크는 브라우저에 저장됩니다
-    </div>
-    <div className="sc" style={{ maxHeight: "calc(100vh - 280px)" }}>
-      {fj.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 0", color: "#d1d5db" }}>
-          <div style={{ fontSize: 24, marginBottom: 4 }}>📭</div>
-          <div style={{ fontSize: 12 }}>조건에 맞는 공고가 없습니다</div>
-        </div>
-      ) : (
-        fj.sort((a, b) => new Date(a.endDate) - new Date(b.endDate)).map((job, i) => <JobCard key={job.id || i} job={job} showCheck={true} />)
-      )}
-    </div>
   </div>
-  )}
 
+  {/* 푸터 */}
   <div style={{ padding: "10px 20px 20px", textAlign: "center" }}>
     <div style={{ fontSize: 10, color: "#d1d5db" }}>
       {demo ? "데모 데이터 · API 연결 시 자동 전환" : "opendata.alio.go.kr · 매일 09:00 KST 갱신"}
